@@ -1,0 +1,19 @@
+<launch>
+    <!-- Set initial pose parameters -->
+    <arg name="initial_x" default="0.65" />
+    <arg name="initial_y" default="1.32" />
+    <arg name="initial_z" default="0.0" />
+    <arg name="initial_roll" default="0.0" />
+    <arg name="initial_pitch" default="0.0" />
+    <arg name="initial_yaw" default="0.0" />
+  
+    <!-- Launch the TurtleBot3 Navigation -->
+    <include file="$(find turtlebot3_navigation)/launch/turtlebot3_navigation.launch">
+      <!-- Add arguments for initial pose -->
+      <arg name="initial_pose_x" value="$(arg initial_x)" />
+      <arg name="initial_pose_y" value="$(arg initial_y)" />
+      <arg name="initial_pose_z" value="$(arg initial_z)" />
+      <arg name="initial_pose_a" value="$(arg initial_yaw)" />
+    </include>
+  </launch>
+  

@@ -1,0 +1,3 @@
+<launch>
+	<node name="test" pkg="final" type="test_move.py" output="screen" />
+</launch>
