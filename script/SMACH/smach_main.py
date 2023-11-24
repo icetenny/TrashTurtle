@@ -11,7 +11,7 @@ import math
 
 
 class TrashTurtle():
-    def __init__(self) -> None:
+    def __init__(self):
         self.sm = smach.StateMachine(outcomes=['end'])
 
         self.output_to_state = {'sleeping': 'STATE_Sleeping', 'go_home': 'STATE_GoHome', 'walking': 'STATE_Walking',
@@ -26,7 +26,6 @@ class TrashTurtle():
         self.trash_pose = []
         self.last_goal = None
         self.amcl_pose = None
-
 
         # Constant #################################
         # MI
@@ -52,15 +51,20 @@ class TrashTurtle():
         #     ]
 
         # Real
-
-        self.home_position = (0.07999999076128006, -0.35000017285346985, 0.02937379358416798, 0.9995684970278299)
-        self.trash_position = (2.5099995136260986, -1.28000009059906, -0.6881294080555037, 0.7255879807226564)
+        self.home_position = (
+            0.07999999076128006, -0.35000017285346985, 0.02937379358416798, 0.9995684970278299)
+        self.trash_position = (
+            2.5099995136260986, -1.28000009059906, -0.6881294080555037, 0.7255879807226564)
 
         self.goals = [
-            (1.0699996948242188, -0.8900002241134644, -0.007632980507741884, 0.9999708683799585),
-            (3.109999656677246, -0.5000003576278687, 0.7196149913243335, 0.6943732888448976),
-            (2.7099995613098145, 0.6399995684623718, -0.9999829025506038, 0.005847615451569677),
-            (1.040000081062317, 0.6599997282028198, -0.6990885438738675, 0.7150351095046421)
+            (1.0699996948242188, -0.8900002241134644, -
+             0.007632980507741884, 0.9999708683799585),
+            (3.109999656677246, -0.5000003576278687,
+             0.7196149913243335, 0.6943732888448976),
+            (2.7099995613098145, 0.6399995684623718, -
+             0.9999829025506038, 0.005847615451569677),
+            (1.040000081062317, 0.6599997282028198, -
+             0.6990885438738675, 0.7150351095046421)
         ]
         self.goal_iterator = cycle(self.goals)
 
@@ -74,9 +78,8 @@ class TrashTurtle():
         self.cancel_pub = rospy.Publisher(
             '/move_base/cancel', GoalID, queue_size=10)
         self.cmd_vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
-        self.state_pub = rospy.Publisher('/active_state', String, queue_size=10)
-
-        self.state_pub.publish('STATE_Sleeping')
+        self.state_pub = rospy.Publisher(
+            '/active_state', String, queue_size=10)
 
         # Subscriber #############################
         rospy.Subscriber('/command', String, self.command_callback)
@@ -85,17 +88,16 @@ class TrashTurtle():
         rospy.Subscriber('/bounding_box', String, self.bounding_box_callback)
         rospy.Subscriber('/cmd_vel', Twist, self.vel_callback)
         rospy.Subscriber('/trash_pose', String, self.trash_pose_callback)
-        rospy.Subscriber('/amcl_pose', PoseWithCovarianceStamped, self.amcl_callback)
-        # rospy.Subscriber(
-        #         '/bounding_box', String, bounding_box_callback)
+        rospy.Subscriber(
+            '/amcl_pose', PoseWithCovarianceStamped, self.amcl_callback)
 
-
-        # Start up #############################################3
+        # Start up : Dancing #############################################3
         self.servo_command(1, 'open')
         self.servo_command(2, 'open')
         self.servo_command(2, 'close')
         self.servo_command(1, 'close')
 
+        self.state_pub.publish('STATE_Sleeping')
 
     def add_state(self, name: str, state: smach.State, outcomes: list):
         trans = dict()
@@ -104,7 +106,7 @@ class TrashTurtle():
 
         smach.StateMachine.add(name, state(
             self, name, outcomes), transitions=trans)
-        
+
     def pub_activate_state(self):
         self.state_pub.publish(self.active_state)
 
@@ -116,29 +118,28 @@ class TrashTurtle():
         self.trash_pose = []
         self.pub_activate_state()
 
-
         rospy.loginfo(self.active_state)
 
-    def command_callback(self, msg:String):
+    def command_callback(self, msg: String):
         self.command = msg.data
 
-    def bounding_box_callback(self, msg:String):
+    def bounding_box_callback(self, msg: String):
         self.detect_bounding_box = [float(i) for i in msg.data.split()]
 
-    def vel_callback(self, msg:Twist):
+    def vel_callback(self, msg: Twist):
         self.cmd_vel = msg
 
-    def trash_pose_callback(self, msg:String):
+    def trash_pose_callback(self, msg: String):
         self.trash_pose = [float(i) for i in msg.data.split()]
 
-    def amcl_callback(self, msg:PoseWithCovarianceStamped):
-        self.amcl_pose = [msg.pose.pose.position.x, msg.pose.pose.position.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w]
-
+    def amcl_callback(self, msg: PoseWithCovarianceStamped):
+        self.amcl_pose = [msg.pose.pose.position.x, msg.pose.pose.position.y,
+                          msg.pose.pose.orientation.z, msg.pose.pose.orientation.w]
 
     def is_stop(self):
         return self.cmd_vel.linear.x == 0 and self.cmd_vel.angular.z == 0
-    
-    def at_goal(self, tolerance = 0.2):
+
+    def at_goal(self, tolerance=0.2):
         if self.last_goal:
             pose1 = self.last_goal
             pose2 = self.amcl_pose
@@ -149,11 +150,10 @@ class TrashTurtle():
 
             if distance <= tolerance:
                 return True
-        
+
         return False
 
-
-    def move_base_status_callback(self, msg:GoalStatusArray):
+    def move_base_status_callback(self, msg: GoalStatusArray):
         if msg.status_list:
             goal_status = msg.status_list[0].status
             if goal_status == 3:
@@ -206,7 +206,7 @@ class TrashTurtle():
     def cancel_goal(self):
         self.cancel_pub.publish(GoalID())
         self.last_goal = None
-    
+
     def move(self, x=0, z=0):
         cmd = Twist()
         cmd.linear.x = x
@@ -244,91 +244,63 @@ class BaseState(smach.State):
     def execute(self, userdata):
         self.trash_turtle.enter_new_state()
 
+        self.execute_init()
+
         while not rospy.is_shutdown():
             self.trash_turtle.pub_activate_state()
             if self.trash_turtle.command in self.outcomes:
                 return self.trash_turtle.command
 
+            self.execute_loop()
+
             rospy.sleep(0.1)
+
+    def execute_init(self):
+        # Run one time when entering state
+        pass
+
+    def execute_loop(self):
+        # Run until exit state
+        pass
 
 
 class State_Sleeping(BaseState):
     def __init__(self, trash_turtle: TrashTurtle, name: str, outcomes: list):
         super(State_Sleeping, self).__init__(trash_turtle, name, outcomes)
 
-    def execute(self, userdata):
-        self.trash_turtle.enter_new_state()
-        # Reset goal iter
+    def execute_init(self):
         self.trash_turtle.goal_iterator = cycle(self.trash_turtle.goals)
-
-        while not rospy.is_shutdown():
-            self.trash_turtle.pub_activate_state()
-            if self.trash_turtle.command in self.outcomes:
-                return self.trash_turtle.command
-
-            rospy.sleep(0.1)
 
 
 class State_Walking(BaseState):
     def __init__(self, trash_turtle: TrashTurtle, name: str, outcomes: list):
         super(State_Walking, self).__init__(trash_turtle, name, outcomes)
 
-    def execute(self, userdata):
-        self.trash_turtle.enter_new_state()
-
+    def execute_init(self):
         next_goal = next(self.trash_turtle.goal_iterator)
         self.trash_turtle.move_to_goal(next_goal)
-
-        while not rospy.is_shutdown():
-            self.trash_turtle.pub_activate_state()
-            if self.trash_turtle.command in self.outcomes:
-                return self.trash_turtle.command
-            
-            # print(self.trash_turtle.goal_reached)
-
-            # if self.trash_turtle.goal_reached and not self.trash_turtle.new_goal_assigned:
-            #     next_goal = next(self.trash_turtle.goal_iterator)
-            #     self.trash_turtle.move_to_goal(next_goal)
-                
-            #     self.trash_turtle.goal_reached = False
-            #     self.trash_turtle.new_goal_assigned = True
-            #     print(self.trash_turtle.goal_reached)
-            #     print("here")
-
-            rospy.sleep(0.1)
 
 
 class State_GoHome(BaseState):
     def __init__(self, trash_turtle: TrashTurtle, name: str, outcomes: list):
         super(State_GoHome, self).__init__(trash_turtle, name, outcomes)
 
-    def execute(self, userdata):
-        self.trash_turtle.enter_new_state()
-
+    def execute_init(self):
         self.trash_turtle.move_to_goal(self.trash_turtle.home_position)
 
-        while not rospy.is_shutdown():
-            self.trash_turtle.pub_activate_state()
-            if self.trash_turtle.command in self.outcomes:
-                return self.trash_turtle.command
-
-            if self.trash_turtle.goal_reached:
-                print("I'm HOME")
-                return 'sleeping'
-            rospy.sleep(0.1)
+    def execute_loop(self):
+        if self.trash_turtle.goal_reached:
+            print("I'm HOME")
+            return 'sleeping'
 
 
 class State_Targeting(BaseState):
     def __init__(self, trash_turtle: TrashTurtle, name: str, outcomes: list):
         super(State_Targeting, self).__init__(trash_turtle, name, outcomes)
 
-    def execute(self, userdata):
-        self.trash_turtle.enter_new_state()
-
+    def execute_init(self):
         print("I see a TRASH")
-
         self.trash_turtle.cancel_goal()
-
         rospy.sleep(5)
 
         if self.trash_turtle.trash_pose:
@@ -339,23 +311,16 @@ class State_Targeting(BaseState):
             return 'walking'
             # self.trash_turtle.move_to_goal(self.trash_turtle.last_goal)
 
-        while not rospy.is_shutdown():
-            self.trash_turtle.pub_activate_state()
-            if self.trash_turtle.command in self.outcomes:
-                return self.trash_turtle.command
-            
-            if self.trash_turtle.goal_reached:
-                return 'picking'
-
-            rospy.sleep(0.1)
+    def execute_loop(self):
+        if self.trash_turtle.goal_reached:
+            return 'picking'
 
 
 class State_Picking(BaseState):
     def __init__(self, trash_turtle: TrashTurtle, name: str, outcomes: list):
         super(State_Picking, self).__init__(trash_turtle, name, outcomes)
 
-    def execute(self, userdata):
-        self.trash_turtle.enter_new_state()
+    def execute_init(self):
         print("Let's get this trash.")
         self.trash_turtle.servo_command(1, "open")
 
@@ -375,29 +340,20 @@ class State_GoTrash(BaseState):
     def __init__(self, trash_turtle: TrashTurtle, name: str, outcomes: list):
         super(State_GoTrash, self).__init__(trash_turtle, name, outcomes)
 
-    def execute(self, userdata):
-        self.trash_turtle.enter_new_state()
-
+    def execute_init(self):
         self.trash_turtle.move_to_goal(self.trash_turtle.trash_position)
 
-        while not rospy.is_shutdown():
-            self.trash_turtle.pub_activate_state()
-            if self.trash_turtle.command in self.outcomes:
-                return self.trash_turtle.command
-
-            if self.trash_turtle.goal_reached:
-                print("I'm AT TRASH")
-                return 'placing'
-            rospy.sleep(0.1)
+    def execute_loop(self):
+        if self.trash_turtle.goal_reached:
+            print("I'm AT TRASH")
+            return 'placing'
 
 
 class State_Placing(BaseState):
     def __init__(self, trash_turtle: TrashTurtle, name: str, outcomes: list):
         super(State_Placing, self).__init__(trash_turtle, name, outcomes)
 
-    def execute(self, userdata):
-        self.trash_turtle.enter_new_state()
-
+    def execute_init(self):
         self.trash_turtle.servo_command(1, "open")
         self.trash_turtle.servo_command(2, "open")
         self.trash_turtle.servo_command(2, "close")
